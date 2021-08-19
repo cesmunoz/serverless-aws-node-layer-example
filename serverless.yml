@@ -1,0 +1,46 @@
+app: aws-node-rest-api
+service: aws-node-rest-api
+
+frameworkVersion: '2'
+
+plugins:
+  - serverless-hooks-plugin
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: '20201221'
+
+custom:
+  hooks:
+    before:package:createDeploymentArtifacts:
+      - npm run deploy:prepare
+    
+layers:
+  nodeModules:
+    path: ./.serverless-layers/node-layers/
+    name: My-App-Node-Dependencies
+    description: Node Modules for My app
+    compatibleRuntimes:
+      - nodejs12.x
+    package:
+      include:
+        - ./**
+
+package:
+  individually: true
+  exclude:
+    - ./**
+
+functions:
+  hello:
+    handler: src/handler.hello
+    layers: 
+      - { Ref: NodeModulesLambdaLayer }
+    package:
+      include: 
+        - src/handler.js
+    events:
+      - http:
+          path: /
+          method: get
